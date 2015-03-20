@@ -1,31 +1,17 @@
 Pod::Spec.new do |s|
-  s.name         = "ConstraintFormatter"
-  s.version      = "1.1.0"
-  s.summary      = "A library to unify visual constraints and constraints based on attributes for Auto Layout"
+  s.name         = "UncaughtExceptionHandler"
+  s.version      = "1.0.0"
+  s.summary      = "Handle iOS uncaught exceptions"
 
   s.description  = <<-DESC
-  It's really verbose to write NSLayoutConstraints based on attributes and with this library you can easily write and mix them with visual constraints. Something like this:
-
-  ```objc
-  id views = @{@"view1": view1, @"view2": view2};
-  id metrics = @{@"margin": @(10)};
-  id formats = @[@"view1.bottom == view2.top + margin",
-                 @"H:|-margin-[view1]-margin-|",
-                 @"H:|[view2]|"];
-  
-  [view addConstraintsWithFormats:formats
-                            views:views
-                          metrics:metrics];
-  ```
+                    http://www.cocoawithlove.com/2010/05/handling-unhandled-exceptions-and.html
                    DESC
 
-  s.homepage     = "https://github.com/greis/ConstraintFormatter"
+  s.homepage     = "https://github.com/thanhtrdang/UncaughtExceptionHandler"
   s.license      = 'MIT'
-  s.author       = { "Gabriel Reis" => "gabriel.oreis@gmail.com" }
-  s.platform     = :ios, '6.0'
-  s.source       = { :git => "https://github.com/greis/ConstraintFormatter.git", :tag => s.version.to_s }
-  s.source_files  = 'Classes', 'Classes/**/*.{h,m}'
-  s.exclude_files = 'Classes/Exclude'
+  s.author       = { "Thanh Dang" => "thanhtrdang@gmail.com" }
+  s.platform     = :ios, '7.0'
+  s.source       = { :git => "https://github.com/thanhtrdang/UncaughtExceptionHandler.git", :branch => "master" }
+  s.source_files  = 'UncaughtExceptionHandler/UncaughtExceptionHandler.{h,m}'
   s.requires_arc = true
-  s.dependency 'RegexKitLite', '~> 4.0'
 end
