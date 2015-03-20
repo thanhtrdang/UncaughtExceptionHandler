@@ -64,15 +64,16 @@ const NSInteger UncaughtExceptionHandlerReportAddressCount = 5;
 
     UIAlertView* alert =
         [[UIAlertView alloc]
-                initWithTitle:NSLocalizedString(@"Unhandled exception", nil)
-                      message:[NSString stringWithFormat:NSLocalizedString(
-                                                             @"You can try to continue but the application may be unstable.\n\n"
-                                                             @"Debug details follow:\n%@\n%@",
-                                                             nil),
-                                        [exception reason],
-                                        [exception userInfo][UncaughtExceptionHandlerAddressesKey]]
+                initWithTitle:@"Sorry for inconvenience!"
+                      message:@"The app reached a rare bug.\nYou can try to continue but it may be UNSTABLE.\nPlease restart and the bug should be autofixed."
+                     //                      message:[NSString stringWithFormat:NSLocalizedString(
+                     //                                                             @"You can try to continue but the app may be unstable.\n\n"
+                     //                                                             @"Please restart the app and the bugs may be autofixed.",
+                     //                                                             nil),
+                     //                                        [exception reason],
+                     //                                        [exception userInfo][UncaughtExceptionHandlerAddressesKey]]
                      delegate:self
-            cancelButtonTitle:NSLocalizedString(@"Quit", nil)
+            cancelButtonTitle:NSLocalizedString(@"Terminate", nil)
             otherButtonTitles:NSLocalizedString(@"Continue", nil), nil];
     [alert show];
 
