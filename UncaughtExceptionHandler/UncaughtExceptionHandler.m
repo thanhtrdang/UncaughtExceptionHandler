@@ -70,7 +70,7 @@ const NSInteger UncaughtExceptionHandlerReportAddressCount = 5;
                                                              @"Debug details follow:\n%@\n%@",
                                                              nil),
                                         [exception reason],
-                                        [[exception userInfo] objectForKey:UncaughtExceptionHandlerAddressesKey]]
+                                        [exception userInfo][UncaughtExceptionHandlerAddressesKey]]
                      delegate:self
             cancelButtonTitle:NSLocalizedString(@"Quit", nil)
             otherButtonTitles:NSLocalizedString(@"Continue", nil), nil];
@@ -96,7 +96,7 @@ const NSInteger UncaughtExceptionHandlerReportAddressCount = 5;
     signal(SIGPIPE, SIG_DFL);
 
     if ([[exception name] isEqual:UncaughtExceptionHandlerSignalExceptionName]) {
-        kill(getpid(), [[[exception userInfo] objectForKey:UncaughtExceptionHandlerSignalKey] intValue]);
+        kill(getpid(), [[exception userInfo][UncaughtExceptionHandlerSignalKey] intValue]);
     }
     else {
         [exception raise];
@@ -113,19 +113,15 @@ void HandleException(NSException* exception)
     }
 
     NSArray* callStack = [UncaughtExceptionHandler backtrace];
-    NSMutableDictionary* userInfo =
-        [NSMutableDictionary dictionaryWithDictionary:[exception userInfo]];
-    [userInfo
-        setObject:callStack
-           forKey:UncaughtExceptionHandlerAddressesKey];
+
+    NSMutableDictionary* userInfo = [NSMutableDictionary dictionaryWithDictionary:[exception userInfo]];
+    userInfo[UncaughtExceptionHandlerAddressesKey] = callStack;
 
     [[UncaughtExceptionHandler new]
         performSelectorOnMainThread:@selector(handleException:)
-                         withObject:
-                             [NSException
-                                 exceptionWithName:[exception name]
-                                            reason:[exception reason]
-                                          userInfo:userInfo]
+                         withObject:[NSException exceptionWithName:[exception name]
+                                                            reason:[exception reason]
+                                                          userInfo:userInfo]
                       waitUntilDone:YES];
 }
 
@@ -136,29 +132,17 @@ void SignalHandler(int signal)
         return;
     }
 
-    NSMutableDictionary* userInfo =
-        [NSMutableDictionary
-            dictionaryWithObject:[NSNumber numberWithInt:signal]
-                          forKey:UncaughtExceptionHandlerSignalKey];
-
-    NSArray* callStack = [UncaughtExceptionHandler backtrace];
-    [userInfo
-        setObject:callStack
-           forKey:UncaughtExceptionHandlerAddressesKey];
+    NSDictionary* userInfo = @{
+        UncaughtExceptionHandlerSignalKey : [NSNumber numberWithInt:signal],
+        UncaughtExceptionHandlerAddressesKey : [UncaughtExceptionHandler backtrace]
+    };
 
     [[UncaughtExceptionHandler new]
         performSelectorOnMainThread:@selector(handleException:)
-                         withObject:
-                             [NSException
-                                 exceptionWithName:UncaughtExceptionHandlerSignalExceptionName
-                                            reason:
-                                                [NSString stringWithFormat:
-                                                              NSLocalizedString(@"Signal %d was raised.", nil),
-                                                          signal]
-                                          userInfo:
-                                              [NSDictionary
-                                                  dictionaryWithObject:[NSNumber numberWithInt:signal]
-                                                                forKey:UncaughtExceptionHandlerSignalKey]]
+                         withObject:[NSException exceptionWithName:UncaughtExceptionHandlerSignalExceptionName
+                                                            reason:[NSString stringWithFormat:NSLocalizedString(@"Signal %d was raised.", nil),
+                                                                             signal]
+                                                          userInfo:userInfo]
                       waitUntilDone:YES];
 }
 
