@@ -14,11 +14,9 @@
 
 #import <UIKit/UIKit.h>
 
-@interface UncaughtExceptionHandler : NSObject
-{
-	BOOL dismissed;
-}
+typedef void (^UncaughtExceptionBlock)(NSException *exception);
 
+@interface UncaughtExceptionHandler : NSObject
 @end
 
-void InstallUncaughtExceptionHandler();
+void InstallUncaughtExceptionHandler(UncaughtExceptionBlock block);

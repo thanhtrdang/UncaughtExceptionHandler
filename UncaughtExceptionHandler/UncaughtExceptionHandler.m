@@ -26,7 +26,11 @@ const int32_t UncaughtExceptionMaximum = 10;
 const NSInteger UncaughtExceptionHandlerSkipAddressCount = 4;
 const NSInteger UncaughtExceptionHandlerReportAddressCount = 5;
 
-@implementation UncaughtExceptionHandler
+static UncaughtExceptionBlock _uncaughtExceptionBlock = nil;
+
+@implementation UncaughtExceptionHandler {
+    BOOL dismissed;
+}
 
 + (NSArray*)backtrace
 {
@@ -54,28 +58,50 @@ const NSInteger UncaughtExceptionHandlerReportAddressCount = 5;
     }
 }
 
-- (void)validateAndSaveCriticalApplicationData
+- (void)saveException:(NSException*)exception
 {
+    NSMutableArray *UncaughtExceptions = [[NSUserDefaults standardUserDefaults] mutableArrayValueForKey:@"UncaughtExceptions"];
+    if (UncaughtExceptions == nil) {
+        UncaughtExceptions = [NSMutableArray array];
+    }
+    [UncaughtExceptions addObject: @{
+                                     @"When": [NSDate date],
+                                     @"Name": [exception name],
+                                     @"Reason": [exception reason],
+                                     @"UserInfo": [exception userInfo]
+                                     }];
+    
+    [[NSUserDefaults standardUserDefaults] setObject:UncaughtExceptions forKey:@"UncaughtExceptions"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
 - (void)handleException:(NSException*)exception
 {
-    [self validateAndSaveCriticalApplicationData];
+    [self saveException:exception];
 
-    UIAlertView* alert =
-        [[UIAlertView alloc]
-                initWithTitle:@"Sorry for inconvenience!"
-                      message:@"The app reached a rare bug.\nYou can try to continue but it may be UNSTABLE.\nPlease restart and the bug should be autofixed."
-                     //                      message:[NSString stringWithFormat:NSLocalizedString(
-                     //                                                             @"You can try to continue but the app may be unstable.\n\n"
-                     //                                                             @"Please restart the app and the bugs may be autofixed.",
-                     //                                                             nil),
-                     //                                        [exception reason],
-                     //                                        [exception userInfo][UncaughtExceptionHandlerAddressesKey]]
-                     delegate:self
-            cancelButtonTitle:NSLocalizedString(@"Terminate", nil)
-            otherButtonTitles:NSLocalizedString(@"Continue", nil), nil];
-    [alert show];
+    if (_uncaughtExceptionBlock) {
+        UncaughtExceptionBlock block = [_uncaughtExceptionBlock copy];
+        block(exception);
+    }
+    
+    BOOL releaseMode;
+#ifndef DEBUG
+    releaseMode = YES;
+#elif DEBUG == 0
+    releaseMode = YES;
+#else
+    releaseMode = NO;
+#endif
+    if (!releaseMode) {
+        UIAlertView* alert = [[UIAlertView alloc] initWithTitle:@"Uncaught Exception"
+                                                        message:[NSString stringWithFormat: @"Debug details follow:\n%@\n%@",
+                                                                            [exception reason],
+                                                                            [exception userInfo][UncaughtExceptionHandlerAddressesKey]]
+                                                       delegate:self
+                                              cancelButtonTitle:@"Quit"
+                                              otherButtonTitles:@"Continue", nil];
+        [alert show];
+    }
 
     CFRunLoopRef runLoop = CFRunLoopGetCurrent();
     CFArrayRef allModes = CFRunLoopCopyAllModes(runLoop);
@@ -141,14 +167,15 @@ void SignalHandler(int signal)
     [[UncaughtExceptionHandler new]
         performSelectorOnMainThread:@selector(handleException:)
                          withObject:[NSException exceptionWithName:UncaughtExceptionHandlerSignalExceptionName
-                                                            reason:[NSString stringWithFormat:NSLocalizedString(@"Signal %d was raised.", nil),
-                                                                             signal]
+                                                            reason:[NSString stringWithFormat:@"Signal %d was raised.", signal]
                                                           userInfo:userInfo]
                       waitUntilDone:YES];
 }
 
-void InstallUncaughtExceptionHandler()
+void InstallUncaughtExceptionHandler(UncaughtExceptionBlock block)
 {
+    _uncaughtExceptionBlock = block;
+    
     NSSetUncaughtExceptionHandler(&HandleException);
     signal(SIGABRT, SignalHandler);
     signal(SIGILL, SignalHandler);
